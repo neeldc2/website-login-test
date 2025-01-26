@@ -9,6 +9,7 @@ spring:
               - Path=/api/website-1/**
             filters:
               - StripPrefix=1
+              - RemoveRequestHeader=Authorization
 
           - id: website-2
             uri: http://localhost:8081/
@@ -16,6 +17,7 @@ spring:
               - Path=/api/website-2/**
             filters:
               - StripPrefix=1
+              - RemoveRequestHeader=Authorization
 
   mvc:
     pathmatch:
