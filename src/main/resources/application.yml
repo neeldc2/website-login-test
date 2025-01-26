@@ -1,0 +1,26 @@
+spring:
+  cloud:
+    gateway:
+      mvc:
+        routes:
+          - id: website-1
+            uri: http://localhost:8080/
+            predicates:
+              - Path=/api/website-1/**
+            filters:
+              - StripPrefix=1
+
+          - id: website-2
+            uri: http://localhost:8081/
+            predicates:
+              - Path=/api/website-2/**
+            filters:
+              - StripPrefix=1
+
+  mvc:
+    pathmatch:
+      matching-strategy: ANT_PATH_MATCHER
+
+logging:
+  level:
+    org.springframework.cloud.gateway.mvc: DEBUG
