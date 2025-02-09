@@ -4,6 +4,9 @@ import lombok.NonNull;
 
 public record UserLoginRequest(
         @NonNull String email,
-        @NonNull String password
+        @NonNull String password,
+        Long tenantId, // needed only for multi-tenant user
+        @NonNull String ipAddress,
+        @NonNull String userAgent
 ) {
 }

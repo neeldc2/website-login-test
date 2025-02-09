@@ -52,8 +52,10 @@ public class AuthenticationJwtTokenFilter extends OncePerRequestFilter {
             String token = authorisationHeader.substring(7);
             // This validated JWT as well
             String email = jwtService.getSubject(token);
+            final UserContext userContext = jwtService.getUserContext(token);
 
             // User Repository call can be made as well if more information from user table is needed.
+            // This call can be skipped as well
             UserDetails userDetails = springBootSecurityUserDetailService.loadUserByUsername(email);
 
             if (userDetails.getUsername().equals(email)) {
@@ -67,11 +69,7 @@ public class AuthenticationJwtTokenFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
 
                 User user = userRepository.findByEmail(email).get();
-                UserContext userContextDto =
-                        UserContext.builder()
-                                .userId(user.getId())
-                                .build();
-                request = addUserDetailsToHeader(request, userContextDto);
+                request = addUserDetailsToHeader(request, userContext);
             }
         }
 
@@ -83,19 +81,35 @@ public class AuthenticationJwtTokenFilter extends OncePerRequestFilter {
         return new HttpServletRequestWrapper(request) {
 
             final String userId = userContextDto.userId().toString();
+            final String tenant = userContextDto.tenant();
+            final String tenantId = userContextDto.tenantId().toString();
+            final String tenantGuid = userContextDto.tenantGuid().toString();
+            final String permissionSet = userContextDto.permissions().toString();
 
             /*@Override
-            public String getHeader(String name) {
-                if ("x-user-id".equalsIgnoreCase(name)) {
+            public String getHeader(String tenantName) {
+                if ("x-user-id".equalsIgnoreCase(tenantName)) {
                     return userId;
                 }
-                return super.getHeader(name);
+                return super.getHeader(tenantName);
             }*/
 
             @Override
             public Enumeration<String> getHeaders(String name) {
                 if ("x-user-id".equalsIgnoreCase(name)) {
                     return Collections.enumeration(Collections.singletonList(userId));
+                }
+                if ("x-tenant".equalsIgnoreCase(name)) {
+                    return Collections.enumeration(Collections.singletonList(tenant));
+                }
+                if ("x-tenant-id".equalsIgnoreCase(name)) {
+                    return Collections.enumeration(Collections.singletonList(tenantId));
+                }
+                if ("x-tenant-guid".equalsIgnoreCase(name)) {
+                    return Collections.enumeration(Collections.singletonList(tenantGuid));
+                }
+                if ("x-permissions".equalsIgnoreCase(name)) {
+                    return Collections.enumeration(Collections.singletonList(permissionSet));
                 }
                 return super.getHeaders(name);
             }
@@ -104,6 +118,10 @@ public class AuthenticationJwtTokenFilter extends OncePerRequestFilter {
             public Enumeration<String> getHeaderNames() {
                 Map<String, String> headers = new HashMap<>();
                 headers.put("x-user-id", userId);
+                headers.put("x-tenant", tenant);
+                headers.put("x-tenant-id", tenantId);
+                headers.put("x-tenant-guid", tenantGuid);
+                headers.put("x-permissions", permissionSet);
                 headers.putAll(Collections.list(super.getHeaderNames())
                         .stream()
                         .collect(HashMap::new, (m, v) -> m.put(v, super.getHeader(v)), Map::putAll));

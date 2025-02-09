@@ -40,8 +40,12 @@ public class Tenant {
     private String databaseName;
 
     @Column(name = "enabled", nullable = false)
-    private boolean enabled;
+    @Builder.Default
+    private boolean enabled = true;
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "tenant")
     private List<TenantUser> tenantUserList;
+
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "tenant")
+    private List<UserTenantRole> userTenantRoles;
 }

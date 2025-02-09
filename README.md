@@ -8,3 +8,13 @@ This project will Act as a microservice that
 * will not pass the Access Token to other microservices
 * will pass User Context to other microservices so that they know which user has made the API call
 * has Flyway which will run during start-up
+* produces Refresh Token during Login
+* APIs cannot be authenticated using Refresh Token
+* Refresh Token can only be used to create Access Token
+* Inserts default Roles and Permissions
+* Login History is captured that has success and failed logins along with ip address and user agent
+* Login History is partitioned with DATETIME for every month till 2026
+
+TODO:
+
+* Add roles and permissions

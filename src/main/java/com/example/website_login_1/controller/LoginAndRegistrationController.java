@@ -1,6 +1,11 @@
 package com.example.website_login_1.controller;
 
-import com.example.website_login_1.dto.CreateUserRequest;
+import com.example.website_login_1.dto.CreateTenantRequest;
+import com.example.website_login_1.dto.CreateTenantResponse;
+import com.example.website_login_1.dto.CreateTenantUserRequest;
+import com.example.website_login_1.dto.RefreshTokenRequest;
+import com.example.website_login_1.dto.RefreshTokenResponse;
+import com.example.website_login_1.dto.UpdateTenantRequest;
 import com.example.website_login_1.dto.UserLoginRequest;
 import com.example.website_login_1.dto.UserLoginResponse;
 import com.example.website_login_1.service.UserService;
@@ -8,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -19,13 +25,33 @@ public class LoginAndRegistrationController {
     private final UserService userService;
 
     @PostMapping("/register")
-    public void registerUser(@RequestBody CreateUserRequest createUserRequest) {
-        userService.createUser(createUserRequest);
+    public CreateTenantResponse registerTenant(@RequestBody CreateTenantRequest createTenantRequest) {
+        return userService.registerTenant(createTenantRequest);
+    }
+
+    @PutMapping("/tenant")
+    public void updateTenant(@RequestBody UpdateTenantRequest updateTenantRequest) {
+        userService.updateTenant(updateTenantRequest);
+    }
+
+    @PostMapping("/user")
+    public void createTenantUser(@RequestBody CreateTenantUserRequest createTenantUserRequest) {
+        userService.createTenantUser(createTenantUserRequest);
     }
 
     @PostMapping("/login")
     public UserLoginResponse userLogin(@RequestBody UserLoginRequest userLoginRequest) {
-        return userService.userLogin(userLoginRequest);
+        try {
+            return userService.userLogin(userLoginRequest);
+        } catch (Exception exception) {
+            userService.captureFailedUserLoginHistory(userLoginRequest, exception);
+            throw exception;
+        }
+    }
+
+    @PostMapping("/refresh")
+    public RefreshTokenResponse userLogin(@RequestBody RefreshTokenRequest refreshTokenRequest) {
+        return userService.refreshToken(refreshTokenRequest);
     }
 
     // This is for basic auth

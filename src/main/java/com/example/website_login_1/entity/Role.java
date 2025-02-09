@@ -35,7 +35,7 @@ public class Role {
     private String name;
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "role")
-    private List<UserRole> userRoleList;
+    private List<UserTenantRole> userTenantRoles;
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "role")
     private List<RolePermission> rolePermissionList;

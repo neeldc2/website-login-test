@@ -1,18 +1,13 @@
 package com.example.website_login_1.service;
 
-import com.example.website_login_1.entity.RolePermission;
 import com.example.website_login_1.entity.User;
-import com.example.website_login_1.entity.UserRole;
 import com.example.website_login_1.repository.UserRepository;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 public class SpringBootSecurityUserDetailService implements UserDetailsService {
@@ -30,7 +25,7 @@ public class SpringBootSecurityUserDetailService implements UserDetailsService {
 
         /*Set<GrantedAuthority> authorities = user.getUserRoleList()
                 .stream()
-                .map(UserRole::getRole)
+                .map(UserTenantRole::getRole)
                 .flatMap(role -> role.getRolePermissionList().stream().map(RolePermission::getPermission))
                 .map(permission -> new SimpleGrantedAuthority(permission.getName()))
                 .collect(Collectors.toSet());*/

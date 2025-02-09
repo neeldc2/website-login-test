@@ -1,13 +1,11 @@
 package com.example.website_login_1.repository;
 
-import com.example.website_login_1.entity.Role;
+import com.example.website_login_1.entity.UserTenantRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.Set;
 import java.util.UUID;
 
 @Repository
-public interface RoleRepository extends JpaRepository<Role, UUID> {
-    Set<Role> findByNameIn(final Set<String> roleNames);
+public interface UserTenantRoleRepository extends JpaRepository<UserTenantRole, UUID> {
 }

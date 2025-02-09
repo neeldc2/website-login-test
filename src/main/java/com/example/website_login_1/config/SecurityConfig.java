@@ -5,6 +5,7 @@ import com.example.website_login_1.service.SpringBootSecurityUserDetailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -38,7 +39,12 @@ public class SecurityConfig {
         return http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(OPTIONS).permitAll()
-                        .requestMatchers("/register", "/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/register", "/user", "/login", "/refresh").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/tenant").permitAll()
+                        //.requestMatchers("/register", "/login", "/tenant").permitAll()
+                        //.requestMatchers(HttpMethod.POST, "/register").permitAll()
+                        //.requestMatchers(HttpMethod.POST, "/login").permitAll()
+                        //.requestMatchers(HttpMethod.POST, "/tenant").permitAll()
                         //.requestMatchers("/login").permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
