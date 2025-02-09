@@ -17,4 +17,4 @@ This project will Act as a microservice that
 
 TODO:
 
-* Add roles and permissions
+* Add roles and permissions API
