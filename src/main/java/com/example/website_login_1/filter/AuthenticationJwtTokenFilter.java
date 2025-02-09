@@ -1,10 +1,10 @@
 package com.example.website_login_1.filter;
 
-import com.example.website_login_1.dto.UserContext;
 import com.example.website_login_1.entity.User;
 import com.example.website_login_1.repository.UserRepository;
 import com.example.website_login_1.service.JwtService;
 import com.example.website_login_1.service.SpringBootSecurityUserDetailService;
+import com.example.website_login_1.usercontext.UserContext;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,6 +24,8 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.example.website_login_1.constant.WebsiteLoginConstants.USER_CONTEXT_ATTRIBUTE;
 
 @Component
 public class AuthenticationJwtTokenFilter extends OncePerRequestFilter {
@@ -69,6 +71,7 @@ public class AuthenticationJwtTokenFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
 
                 User user = userRepository.findByEmail(email).get();
+                request.setAttribute(USER_CONTEXT_ATTRIBUTE, userContext);
                 request = addUserDetailsToHeader(request, userContext);
             }
         }

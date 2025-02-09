@@ -17,6 +17,7 @@ import com.example.website_login_1.entity.Tenant;
 import com.example.website_login_1.entity.TenantUser;
 import com.example.website_login_1.entity.User;
 import com.example.website_login_1.entity.UserTenantRole;
+import com.example.website_login_1.exception.WebsiteException;
 import com.example.website_login_1.repository.LoginHistoryRepository;
 import com.example.website_login_1.repository.RoleRepository;
 import com.example.website_login_1.repository.TenantRepository;
@@ -98,7 +99,7 @@ public class UserService {
         // Below code will not run if username/password is invalid.
         // So, the below if code is not required
         if (authentication.isAuthenticated()) {
-            System.out.println("Good creds");
+            log.info("Good creds");
         }
 
         final UserDetails userDetails = (UserDetails) authentication.getPrincipal();
@@ -248,7 +249,7 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("Tenant Guid is invalid"));
 
         if (!tenant.isEnabled()) {
-            throw new RuntimeException("Tenant is disabled");
+            throw new WebsiteException("Tenant is disabled");
         }
         return tenant;
     }
@@ -257,7 +258,7 @@ public class UserService {
         Set<Role> roles = roleRepository.findByNameIn(roleNames);
 
         if (CollectionUtils.isEmpty(roles) || roles.size() != roleNames.size()) {
-            throw new RuntimeException("Invalid Roles");
+            throw new WebsiteException("Invalid Roles");
         }
 
         return Collections.unmodifiableSet(roles);
@@ -267,13 +268,13 @@ public class UserService {
         final Tenant tenant = tenantRepository.findByName(createTenantRequest.tenantName());
 
         if (tenant != null) {
-            throw new RuntimeException("Tenant exists already");
+            throw new WebsiteException("Tenant exists already");
         }
 
         CreateUserRequest createUserRequest = createTenantRequest.createUserRequest();
 
         if (!createUserRequest.roleNames().contains(ADMIN_ROLE_NAME)) {
-            throw new RuntimeException("Tenant User is not admin");
+            throw new WebsiteException("Tenant User is not admin");
         }
     }
 

@@ -1,6 +1,7 @@
 package com.example.website_login_1.service;
 
-import com.example.website_login_1.dto.UserContext;
+import com.example.website_login_1.exception.WebsiteException;
+import com.example.website_login_1.usercontext.UserContext;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -37,7 +38,7 @@ public class JwtService {
             SecretKey key = keyGenerator.generateKey();
             secretKey = Base64.getEncoder().encodeToString(key.getEncoded());
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
+            throw new WebsiteException(e);
         }
     }
 

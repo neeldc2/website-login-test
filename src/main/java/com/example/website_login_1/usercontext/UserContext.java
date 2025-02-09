@@ -1,4 +1,4 @@
-package com.example.website_login_1.dto;
+package com.example.website_login_1.usercontext;
 
 import lombok.Builder;
 import lombok.NonNull;

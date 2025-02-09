@@ -11,7 +11,6 @@ import com.example.website_login_1.dto.UserLoginResponse;
 import com.example.website_login_1.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -54,9 +53,4 @@ public class LoginAndRegistrationController {
         return userService.refreshToken(refreshTokenRequest);
     }
 
-    // This is for basic auth
-    @GetMapping("test")
-    public String testAPI() {
-        return "works";
-    }
 }
