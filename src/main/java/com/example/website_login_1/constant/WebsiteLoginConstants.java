@@ -13,4 +13,8 @@ public class WebsiteLoginConstants {
         public static String EDIT_PROFILE = "EDIT_PROFILE";
         public static String MANAGE_USERS = "MANAGE_USERS";
     }
+
+    public static class Roles {
+        public static String STUDENT = "STUDENT";
+    }
 }

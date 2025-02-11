@@ -31,6 +31,7 @@ import static com.example.website_login_1.constant.WebsiteLoginConstants.USER_CO
 public class AuthenticationJwtTokenFilter extends OncePerRequestFilter {
 
     public static final String AUTHORIZATION = "Authorization";
+
     @Autowired
     private JwtService jwtService;
 

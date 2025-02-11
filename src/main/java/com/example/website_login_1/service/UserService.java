@@ -7,6 +7,7 @@ import com.example.website_login_1.dto.CreateUserRequest;
 import com.example.website_login_1.dto.RefreshTokenRequest;
 import com.example.website_login_1.dto.RefreshTokenResponse;
 import com.example.website_login_1.dto.UpdateTenantRequest;
+import com.example.website_login_1.dto.UpsertUserProfileRequest;
 import com.example.website_login_1.dto.UserLoginRequest;
 import com.example.website_login_1.dto.UserLoginResponse;
 import com.example.website_login_1.entity.LoginHistory;
@@ -16,14 +17,17 @@ import com.example.website_login_1.entity.RolePermission;
 import com.example.website_login_1.entity.Tenant;
 import com.example.website_login_1.entity.TenantUser;
 import com.example.website_login_1.entity.User;
+import com.example.website_login_1.entity.UserProfile;
 import com.example.website_login_1.entity.UserTenantRole;
 import com.example.website_login_1.exception.WebsiteException;
 import com.example.website_login_1.repository.LoginHistoryRepository;
 import com.example.website_login_1.repository.RoleRepository;
 import com.example.website_login_1.repository.TenantRepository;
 import com.example.website_login_1.repository.TenantUserRepository;
+import com.example.website_login_1.repository.UserProfileRepository;
 import com.example.website_login_1.repository.UserRepository;
 import com.example.website_login_1.repository.UserTenantRoleRepository;
+import com.example.website_login_1.usercontext.UserContextHolder;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -60,6 +64,7 @@ public class UserService {
     private final TenantUserRepository tenantUserRepository;
     private final RoleRepository roleRepository;
     private final UserTenantRoleRepository userTenantRoleRepository;
+    private final UserProfileRepository userProfileRepository;
     private final LoginHistoryRepository loginHistoryRepository;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
@@ -197,6 +202,47 @@ public class UserService {
         tenantRepository.save(tenant);
     }
 
+    public void upsertUserProfile(final UpsertUserProfileRequest upsertUserProfileRequest) {
+        User user = getUser(upsertUserProfileRequest.email())
+                .orElseThrow(() -> new WebsiteException("User does not exists"));
+
+        UUID userId = user.getId();
+        Long tenantId = UserContextHolder.getUserContext().tenantId();
+        Optional<UserProfile> userProfileOptional = getUserProfile(userId, tenantId);
+        UserProfile userProfile;
+
+        if (userProfileOptional.isEmpty()) {
+            userProfile = new UserProfile();
+            userProfile.setUserId(userId);
+            userProfile.setTenantId(tenantId);
+        } else {
+            userProfile = userProfileOptional.get();
+        }
+
+        userProfile.setFirstName(upsertUserProfileRequest.firstName());
+        userProfile.setMiddleName(upsertUserProfileRequest.middleName());
+        userProfile.setLastName(upsertUserProfileRequest.lastName());
+        userProfile.setGender(upsertUserProfileRequest.gender());
+        userProfile.setUsn(upsertUserProfileRequest.usn());
+        userProfile.setYearOfAdmission(upsertUserProfileRequest.yearOfAdmission());
+        userProfile.setYearOfPassing(upsertUserProfileRequest.yearOfPassing());
+        userProfile.setPhoneNumber(upsertUserProfileRequest.phoneNumber());
+        userProfile.setGender(upsertUserProfileRequest.gender());
+        userProfile.setBranch(upsertUserProfileRequest.branch());
+
+        userProfileRepository.save(userProfile);
+    }
+
+    public void deleteUsers() {
+        List<User> users = userRepository.findAll();
+        users.forEach(user -> {
+            if (user.getEmail().contains("neel") || user.getEmail().contains("prem")) {
+                return;
+            }
+            userRepository.delete(user);
+        });
+    }
+
     private String getAccessToken(
             @NonNull final String email,
             @NonNull final Long tenantId
@@ -280,6 +326,10 @@ public class UserService {
 
     private Optional<User> getUser(String email) {
         return userRepository.findByEmail(email);
+    }
+
+    private Optional<UserProfile> getUserProfile(UUID userId, Long tenantId) {
+        return userProfileRepository.findByUserIdAndTenantId(userId, tenantId);
     }
 
 }
