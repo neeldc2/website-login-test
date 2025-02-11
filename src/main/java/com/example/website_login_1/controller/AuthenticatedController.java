@@ -20,4 +20,6 @@ public class AuthenticatedController {
         log.info("User is {}", UserContextHolder.getUserContext().userId());
         return "works";
     }
+
+
 }
