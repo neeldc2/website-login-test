@@ -17,8 +17,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -46,26 +44,19 @@ public class UserImportService {
     public void importUser(UserProfileExcelDto userProfileExcelDto) {
         UUID tenantGuid = UserContextHolder.getUserContext().tenantGuid();
 
-        Instant startTime = Instant.now();
         CreateUserRequest createUserRequest = CreateUserRequest.builder()
                 .email(userProfileExcelDto.email())
                 .username(userProfileExcelDto.firstName())
                 .password(PasswordGenerator.generateSecurePassword(10))
                 .roleNames(Set.of(STUDENT))
                 .build();
-        Instant endTime = Instant.now();
-        log.info("Time for create user request {}", ChronoUnit.MILLIS.between(startTime, endTime));
 
-        startTime = Instant.now();
         CreateTenantUserRequest createTenantUserRequest = CreateTenantUserRequest.builder()
                 .tenantGuid(tenantGuid)
                 .createUserRequest(createUserRequest)
                 .build();
         userService.createTenantUser(createTenantUserRequest);
-        endTime = Instant.now();
-        log.info("Time for create tenant user {}", ChronoUnit.MILLIS.between(startTime, endTime));
 
-        startTime = Instant.now();
         UpsertUserProfileRequest upsertUserProfileRequest = UpsertUserProfileRequest.builder()
                 .firstName(userProfileExcelDto.firstName())
                 .middleName(userProfileExcelDto.middleName())
@@ -79,9 +70,5 @@ public class UserImportService {
                 .branch(userProfileExcelDto.branch())
                 .build();
         userService.upsertUserProfile(upsertUserProfileRequest);
-        endTime = Instant.now();
-        log.info("Time for upsert user {}", ChronoUnit.MILLIS.between(startTime, endTime));
-
-        log.info("user added");
     }
 }
