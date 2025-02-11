@@ -3,11 +3,6 @@ package com.example.website_login_1.excel;
 import com.example.website_login_1.dto.CreateTenantUserRequest;
 import com.example.website_login_1.dto.CreateUserRequest;
 import com.example.website_login_1.dto.UpsertUserProfileRequest;
-import com.example.website_login_1.repository.RoleRepository;
-import com.example.website_login_1.repository.TenantRepository;
-import com.example.website_login_1.repository.TenantUserRepository;
-import com.example.website_login_1.repository.UserRepository;
-import com.example.website_login_1.repository.UserTenantRoleRepository;
 import com.example.website_login_1.service.UserService;
 import com.example.website_login_1.usercontext.UserContextHolder;
 import com.example.website_login_1.utils.PasswordGenerator;
@@ -30,11 +25,6 @@ import static com.example.website_login_1.constant.WebsiteLoginConstants.Roles.S
 public class UserImportService {
 
     private final UserService userService;
-    private final UserRepository userRepository;
-    private final TenantRepository tenantRepository;
-    private final TenantUserRepository tenantUserRepository;
-    private final RoleRepository roleRepository;
-    private final UserTenantRoleRepository userTenantRoleRepository;
 
     public void importUsers(final List<UserProfileExcelDto> userProfileExcelDtoList) {
         userProfileExcelDtoList.forEach(this::importUser);
