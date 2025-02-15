@@ -14,7 +14,8 @@ This project will Act as a microservice that
 * Inserts default Roles and Permissions
 * Login History is captured that has success and failed logins along with ip address and user agent
 * Login History is partitioned with DATETIME for every month till 2026
-* Imports student information from Excel via Multi Threading (1k students in less than a second)
+* Imports student information from Excel via Multi Threading (1k students in less than a second). Example Excel is found
+  in classpath. File name: StudentInfo.xlsx
 
 TODO:
 
