@@ -9,6 +9,10 @@ import java.util.Enumeration;
 
 import static com.example.website_login_1.constant.WebsiteLoginConstants.USER_CONTEXT_ATTRIBUTE;
 
+/**
+ * Explanation on difference between Filter and Interceptor
+ * https://stackoverflow.com/questions/35856454/difference-between-interceptor-and-filter-in-spring-mvc
+ */
 @Component
 public class UserContextInterceptor implements HandlerInterceptor {
 
