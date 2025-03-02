@@ -233,6 +233,10 @@ public class UserService {
         userProfileRepository.save(userProfile);
     }
 
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
     public void deleteUsers() {
         List<User> users = userRepository.findAll();
         users.forEach(user -> {

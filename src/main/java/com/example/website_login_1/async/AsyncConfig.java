@@ -16,6 +16,7 @@ public class AsyncConfig {
         executor.setMaxPoolSize(20);
         executor.setQueueCapacity(1000);
         executor.setThreadNamePrefix("async-");
+        executor.setRejectedExecutionHandler(new BlockingPolicy());
         executor.setTaskDecorator(new ContextCopyingDecorator());
         executor.initialize();
         return executor;

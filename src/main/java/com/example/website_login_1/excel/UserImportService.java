@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import static com.example.website_login_1.constant.WebsiteLoginConstants.Roles.STUDENT;
 
@@ -41,6 +42,9 @@ public class UserImportService {
                 .roleNames(Set.of(STUDENT))
                 .build();
 
+        //log.info("email: {}", createUserRequest.email());
+        //log.info("password: {}", createUserRequest.password());
+
         CreateTenantUserRequest createTenantUserRequest = CreateTenantUserRequest.builder()
                 .tenantGuid(tenantGuid)
                 .createUserRequest(createUserRequest)
@@ -60,5 +64,15 @@ public class UserImportService {
                 .branch(userProfileExcelDto.branch())
                 .build();
         userService.upsertUserProfile(upsertUserProfileRequest);
+    }
+
+    @Async("threadPoolTaskExecutor")
+    public CompletableFuture<String> importUser2(UserProfileExcelDto userProfileExcelDto) {
+        importUser(userProfileExcelDto);
+        return CompletableFuture.completedFuture("Completed");
+    }
+
+    public Integer getUserCount() {
+        return userService.getAllUsers().size();
     }
 }
