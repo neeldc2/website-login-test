@@ -9,6 +9,7 @@ import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +31,14 @@ import java.util.stream.Stream;
 @Service
 public class JwtService {
 
+    // 10 mins
+    @Value("${website-login.access-token-expiration-in-millis:600000}")
+    private Integer accessTokenExpirationInMillis;
+
+    // 2 Hours
+    @Value("${website-login.refresh-token-expiration-in-millis:7200000}")
+    private Integer refreshTokenExpirationInMillis;
+
     private final String secretKey;
 
     public JwtService() {
@@ -50,7 +59,7 @@ public class JwtService {
                 .subject(username)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 // TODO: Make it config. Currently, it expires in 10 mins
-                .expiration(new Date(System.currentTimeMillis() + (1000 * 60 * 10)))
+                .expiration(new Date(System.currentTimeMillis() + (accessTokenExpirationInMillis)))
                 .and()
                 .signWith(getKey())
                 .compact();
@@ -66,7 +75,7 @@ public class JwtService {
                 .subject(email)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 // TODO: Make it config. Currently, it expires in 1 day
-                .expiration(new Date(System.currentTimeMillis() + (1000 * 60 * 60 * 24)))
+                .expiration(new Date(System.currentTimeMillis() + (refreshTokenExpirationInMillis)))
                 .and()
                 .signWith(getKey())
                 .compact();

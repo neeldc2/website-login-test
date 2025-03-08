@@ -51,6 +51,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.example.website_login_1.constant.WebsiteLoginConstants.ADMIN_ROLE_NAME;
+import static com.example.website_login_1.constant.WebsiteLoginConstants.Permissions.MANAGE_USERS;
 
 @Slf4j
 @Service
@@ -206,7 +207,17 @@ public class UserService {
         User user = getUser(upsertUserProfileRequest.email())
                 .orElseThrow(() -> new WebsiteException("User does not exists"));
 
+        UUID userIdFromContext = UserContextHolder.getUserContext().userId();
+        Set<String> userPermissions = UserContextHolder.getUserContext().permissions();
         UUID userId = user.getId();
+
+        // Users can update only their own profile
+        // Only admins can update other user profiles
+        if (!userId.equals(userIdFromContext) ||
+                !userPermissions.contains(MANAGE_USERS)) {
+            throw new WebsiteException("User does not have permission to update profile");
+        }
+
         Long tenantId = UserContextHolder.getUserContext().tenantId();
         Optional<UserProfile> userProfileOptional = getUserProfile(userId, tenantId);
         UserProfile userProfile;

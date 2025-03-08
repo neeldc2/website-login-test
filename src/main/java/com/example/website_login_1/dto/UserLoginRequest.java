@@ -6,6 +6,7 @@ public record UserLoginRequest(
         @NonNull String email,
         @NonNull String password,
         Long tenantId, // needed only for multi-tenant user
+        // Move below to headers
         @NonNull String ipAddress,
         @NonNull String userAgent
 ) {

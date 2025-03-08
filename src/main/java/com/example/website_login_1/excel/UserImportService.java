@@ -42,8 +42,8 @@ public class UserImportService {
                 .roleNames(Set.of(STUDENT))
                 .build();
 
-        //log.info("email: {}", createUserRequest.email());
-        //log.info("password: {}", createUserRequest.password());
+        log.info("email: {}", createUserRequest.email());
+        log.info("password: {}", createUserRequest.password());
 
         CreateTenantUserRequest createTenantUserRequest = CreateTenantUserRequest.builder()
                 .tenantGuid(tenantGuid)
