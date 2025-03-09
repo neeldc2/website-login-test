@@ -41,7 +41,7 @@ public class LoginAndRegistrationController {
     @PostMapping("/login")
     public UserLoginResponse userLogin(@RequestBody UserLoginRequest userLoginRequest) {
         try {
-            return userService.userLogin(userLoginRequest);
+            return userService.userLoginViaUsernamePassword(userLoginRequest);
         } catch (Exception exception) {
             userService.captureFailedUserLoginHistory(userLoginRequest, exception);
             throw exception;

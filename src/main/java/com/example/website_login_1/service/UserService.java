@@ -41,6 +41,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -84,20 +85,30 @@ public class UserService {
                 // default tenant if user is getting created for the first time
                 .defaultTenant(userOptional.isEmpty())
                 .build();
-        tenantUserRepository.save(tenantUser);
+        //tenantUserRepository.save(tenantUser);
+        user.addTenantUsers(tenantUser);
 
+        List<UserTenantRole> userTenantRoleList = new ArrayList<>();
         roles.forEach(role -> {
-            final UserTenantRole userRole = UserTenantRole.builder()
+            final UserTenantRole userTenantRole = UserTenantRole.builder()
                     .role(role)
                     .user(user)
                     .tenant(tenant)
                     .build();
-            userTenantRoleRepository.save(userRole);
+            //userTenantRoleRepository.save(userRole);
+            userTenantRoleList.add(userTenantRole);
         });
+        user.addUserTenantRoles(userTenantRoleList);
 
+        userRepository.save(user);
     }
 
-    public UserLoginResponse userLogin(final UserLoginRequest userLoginRequest) {
+    public boolean doesUserExists(
+            @NonNull final String email) {
+        return userRepository.existsByEmail(email);
+    }
+
+    public UserLoginResponse userLoginViaUsernamePassword(final UserLoginRequest userLoginRequest) {
         // UsernamePasswordAuthenticationFilter is the default filter
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(userLoginRequest.email(), userLoginRequest.password()));
@@ -111,26 +122,35 @@ public class UserService {
         final UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         //String jwtToken = jwtService.generateJwtToken(userDetails.getUsername());
 
-        User user = getUser(userLoginRequest.email()).get();
+        return performUserLogin(userLoginRequest.email(), userLoginRequest.tenantId(),
+                userLoginRequest.userAgent(), userLoginRequest.ipAddress());
+    }
+
+    public UserLoginResponse performUserLogin(
+            @NonNull final String email,
+            final Long tenantId,
+            @NonNull final String userAgent,
+            @NonNull final String ipAddress) {
+        User user = getUser(email).get();
         TenantUser tenantUser = user.getTenantUserList().stream()
                 .filter(tenantUserToFilter -> {
-                    if (userLoginRequest.tenantId() == null) {
+                    if (tenantId == null) {
                         return tenantUserToFilter.isDefaultTenant();
                     } else {
-                        return tenantUserToFilter.getTenant().getId().equals(userLoginRequest.tenantId());
+                        return tenantUserToFilter.getTenant().getId().equals(tenantId);
                     }
                 })
                 .findFirst()
                 .get();
-        final String accessToken = getAccessToken(userLoginRequest.email(), tenantUser.getTenant().getId());
-        final String refreshToken = jwtService.generateRefreshToken(userLoginRequest.email(), tenantUser.getTenant().getId());
+        final String accessToken = getAccessToken(email, tenantUser.getTenant().getId());
+        final String refreshToken = jwtService.generateRefreshToken(email, tenantUser.getTenant().getId());
 
         LoginHistory loginHistory = LoginHistory.builder()
                 .userId(user.getId())
                 .tenantId(tenantUser.getTenant().getId())
                 .email(user.getEmail())
-                .ipAddress(userLoginRequest.ipAddress())
-                .userAgent(userLoginRequest.userAgent())
+                .ipAddress(ipAddress)
+                .userAgent(userAgent)
                 .success(true)
                 .loginTimestamp(Instant.now())
                 .build();
@@ -296,7 +316,8 @@ public class UserService {
                 // TODO: add salt
                 .password(encoder.encode(createUserRequest.password()))
                 .build();
-        return userRepository.save(newUser);
+        //return userRepository.save(newUser);
+        return newUser;
     }
 
     private Tenant getTenant(final UUID tenantGuid) {

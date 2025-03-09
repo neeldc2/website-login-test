@@ -50,6 +50,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(OPTIONS).permitAll()
                         .requestMatchers(HttpMethod.POST, "/register", "/user", "/login", "/refresh").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/auth/google/callback").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/tenant").permitAll()
                         //.requestMatchers("/register", "/login", "/tenant").permitAll()
                         //.requestMatchers(HttpMethod.POST, "/register").permitAll()

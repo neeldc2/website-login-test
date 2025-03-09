@@ -1,5 +1,6 @@
 package com.example.website_login_1.entity;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -34,9 +35,9 @@ public class Role {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "role")
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "role", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<UserTenantRole> userTenantRoles;
 
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "role")
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "role", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<RolePermission> rolePermissionList;
 }

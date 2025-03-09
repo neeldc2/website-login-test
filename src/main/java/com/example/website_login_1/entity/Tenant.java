@@ -1,5 +1,6 @@
 package com.example.website_login_1.entity;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -43,9 +44,9 @@ public class Tenant {
     @Builder.Default
     private boolean enabled = true;
 
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "tenant")
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "tenant", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<TenantUser> tenantUserList;
 
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "tenant")
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "tenant", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<UserTenantRole> userTenantRoles;
 }
