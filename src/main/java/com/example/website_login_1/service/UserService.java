@@ -108,7 +108,9 @@ public class UserService {
         return userRepository.existsByEmail(email);
     }
 
-    public UserLoginResponse userLoginViaUsernamePassword(final UserLoginRequest userLoginRequest) {
+    public UserLoginResponse userLoginViaUsernamePassword(final UserLoginRequest userLoginRequest,
+                                                          final String userAgent,
+                                                          final String ipAddress) {
         // UsernamePasswordAuthenticationFilter is the default filter
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(userLoginRequest.email(), userLoginRequest.password()));
@@ -122,8 +124,11 @@ public class UserService {
         final UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         //String jwtToken = jwtService.generateJwtToken(userDetails.getUsername());
 
-        return performUserLogin(userLoginRequest.email(), userLoginRequest.tenantId(),
-                userLoginRequest.userAgent(), userLoginRequest.ipAddress());
+        return performUserLogin(
+                userLoginRequest.email(),
+                userLoginRequest.tenantId(),
+                userAgent,
+                ipAddress);
     }
 
     public UserLoginResponse performUserLogin(
@@ -163,11 +168,13 @@ public class UserService {
     }
 
     public void captureFailedUserLoginHistory(final UserLoginRequest userLoginRequest,
+                                              final String userAgent,
+                                              final String ipAddress,
                                               final Exception exception) {
         LoginHistory loginHistory = LoginHistory.builder()
                 .email(userLoginRequest.email())
-                .ipAddress(userLoginRequest.ipAddress())
-                .userAgent(userLoginRequest.userAgent())
+                .ipAddress(ipAddress)
+                .userAgent(userAgent)
                 .success(false)
                 .failureReason(exception.getMessage())
                 .loginTimestamp(Instant.now())
