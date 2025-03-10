@@ -52,6 +52,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/register", "/user", "/login", "/refresh").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/google/callback").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/tenant").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/kafka/send").permitAll()
                         //.requestMatchers("/register", "/login", "/tenant").permitAll()
                         //.requestMatchers(HttpMethod.POST, "/register").permitAll()
                         //.requestMatchers(HttpMethod.POST, "/login").permitAll()
