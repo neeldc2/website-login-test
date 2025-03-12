@@ -14,8 +14,17 @@ This project will Act as a microservice that
 * Inserts default Roles and Permissions
 * Login History is captured that has success and failed logins along with ip address and user agent
 * Login History is partitioned with DATETIME for every month till 2026
-* Imports student information from Excel via Multi Threading (1k students in less than a second). Example Excel is found
-  in classpath. File name: StudentInfo.xlsx
+* Imports student information from Excel via Multi Threading (1k students in 8 seconds). Example Excel is found
+  in classpath. File name: StudentInfo.xlsx. ThreadPoolTaskExecutor makes use of a TaskDecorator that copies
+  User Context from main thread to child thread. ThreadPoolTaskExecutor also makes use of RejectedExecutionHandler
+  which blocks the main thread until more child threads can be created.
+* Users can Login via Google SSO
+* CORS setup with Allowed Origin of http://localhost:3000 and http://localhost:80. That means, only from
+  these URLs are you allowed to invoke the APIs. The API call made with OPTIONS verb should have these 3 headers.
+  Origin, Access-Control-Request-Method and Access-Control-Request-Headers.
+* Users can update only their own profile. Only admins can update other user profiles.
+* Use Kafka to send messages to other microservices.
+* Use ActiveMq to send messages to other microservices.
 
 TODO:
 

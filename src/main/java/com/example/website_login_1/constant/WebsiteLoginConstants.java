@@ -22,4 +22,8 @@ public class WebsiteLoginConstants {
         public static final String NOTIFICATION_EMAIL_TOPIC = "notifications-email";
         public static final String NOTIFICATION_EMAIL_TOPIC_CONSUMER_GROUP = "notifications-email-consumer-group";
     }
+
+    public static class ActiveMqConstants {
+        public static final String NOTIFICATION_EMAIL_QUEUE = "notifications-email";
+    }
 }

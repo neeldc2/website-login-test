@@ -320,7 +320,7 @@ public class UserService {
                 .email(createUserRequest.email())
                 .enabled(true)
                 .username(createUserRequest.username())
-                // TODO: add salt
+                // BCryptPasswordEncoder uses salt by default
                 .password(encoder.encode(createUserRequest.password()))
                 .build();
         //return userRepository.save(newUser);
