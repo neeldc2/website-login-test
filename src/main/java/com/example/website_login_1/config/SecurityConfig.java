@@ -42,16 +42,18 @@ public class SecurityConfig {
         return http.csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration configuration = new CorsConfiguration();
-                    configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://localhost:80"));
+                    //configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://localhost:80"));
+                    configuration.setAllowedOrigins(Arrays.asList("*"));
                     configuration.setAllowedMethods(Arrays.asList("*"));
                     configuration.setAllowedHeaders(Arrays.asList("*"));
                     return configuration;
                 }))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(OPTIONS).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/tenants").permitAll()
                         .requestMatchers(HttpMethod.POST, "/register", "/user", "/login", "/refresh").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/auth/google/callback").permitAll()
-                        .requestMatchers(HttpMethod.PUT, "/tenant").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/auth/google/callback", "/reset-password-email").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/tenant", "/reset-password").permitAll()
                         .requestMatchers(HttpMethod.POST, "/messaging/**").permitAll()
                         //.requestMatchers("/register", "/login", "/tenant").permitAll()
                         //.requestMatchers(HttpMethod.POST, "/register").permitAll()

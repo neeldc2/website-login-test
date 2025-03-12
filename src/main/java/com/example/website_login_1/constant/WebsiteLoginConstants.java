@@ -24,6 +24,6 @@ public class WebsiteLoginConstants {
     }
 
     public static class ActiveMqConstants {
-        public static final String NOTIFICATION_EMAIL_QUEUE = "notifications-email";
+        public static final String ADD_TENANT_EMAIL_QUEUE = "add-tenant-email";
     }
 }

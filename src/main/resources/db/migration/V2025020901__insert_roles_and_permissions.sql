@@ -8,6 +8,7 @@ VALUES
 -- Insert permissions
 INSERT INTO permissions (id, name)
 VALUES
+    (UUID_TO_BIN(UUID()), 'MANAGE_TENANT'),
     (UUID_TO_BIN(UUID()), 'CREATE_POST'),
     (UUID_TO_BIN(UUID()), 'DELETE_POST'),
     (UUID_TO_BIN(UUID()), 'EDIT_PROFILE'),
@@ -24,6 +25,7 @@ SET @admin_id = (SELECT id FROM roles WHERE name = 'ADMIN');
 SET @mod_id = (SELECT id FROM roles WHERE name = 'MODERATOR');
 SET @student_id = (SELECT id FROM roles WHERE name = 'STUDENT');
 
+-- never add "MANAGE_TENANT" permission here. It should be never assigned to an role.
 SET @create_post_id = (SELECT id FROM permissions WHERE name = 'CREATE_POST');
 SET @delete_post_id = (SELECT id FROM permissions WHERE name = 'DELETE_POST');
 SET @manage_users_id = (SELECT id FROM permissions WHERE name = 'MANAGE_USERS');

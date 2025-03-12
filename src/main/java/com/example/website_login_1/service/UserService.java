@@ -6,6 +6,7 @@ import com.example.website_login_1.dto.CreateTenantUserRequest;
 import com.example.website_login_1.dto.CreateUserRequest;
 import com.example.website_login_1.dto.RefreshTokenRequest;
 import com.example.website_login_1.dto.RefreshTokenResponse;
+import com.example.website_login_1.dto.ResetPasswordRequest;
 import com.example.website_login_1.dto.UpdateTenantRequest;
 import com.example.website_login_1.dto.UpsertUserProfileRequest;
 import com.example.website_login_1.dto.UserLoginRequest;
@@ -70,6 +71,7 @@ public class UserService {
     private final LoginHistoryRepository loginHistoryRepository;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final NotificationService notificationService;
 
     public void createTenantUser(final CreateTenantUserRequest createTenantUserRequest) {
         Tenant tenant = getValidTenant(createTenantUserRequest.tenantGuid());
@@ -136,17 +138,8 @@ public class UserService {
             final Long tenantId,
             @NonNull final String userAgent,
             @NonNull final String ipAddress) {
-        User user = getUser(email).get();
-        TenantUser tenantUser = user.getTenantUserList().stream()
-                .filter(tenantUserToFilter -> {
-                    if (tenantId == null) {
-                        return tenantUserToFilter.isDefaultTenant();
-                    } else {
-                        return tenantUserToFilter.getTenant().getId().equals(tenantId);
-                    }
-                })
-                .findFirst()
-                .get();
+        final User user = getValidEmail(email);
+        final TenantUser tenantUser = getValidTenantUser(tenantId, user);
         final String accessToken = getAccessToken(email, tenantUser.getTenant().getId());
         final String refreshToken = jwtService.generateRefreshToken(email, tenantUser.getTenant().getId());
 
@@ -200,7 +193,7 @@ public class UserService {
         final Tenant tenant = Tenant.builder()
                 .guid(UUID.randomUUID())
                 .name(createTenantRequest.tenantName())
-                .databaseName(createTenantRequest.tenantName())
+                .databaseName(createTenantRequest.tenantCode())
                 .build();
         tenantRepository.save(tenant);
 
@@ -211,10 +204,17 @@ public class UserService {
                 .build();
         createTenantUser(createTenantUserRequest);
 
-        return CreateTenantResponse.builder()
+        CreateTenantResponse createTenantResponse = CreateTenantResponse.builder()
                 .tenantId(tenant.getId())
                 .tenantGuid(tenant.getGuid())
                 .build();
+
+        notificationService.sendEmailOnAddTenant(
+                createTenantUserRequest.createUserRequest().email(),
+                tenant.getId()
+        );
+
+        return createTenantResponse;
     }
 
     public void updateTenant(final UpdateTenantRequest updateTenantRequest) {
@@ -285,6 +285,39 @@ public class UserService {
         });
     }
 
+    public void sendResetPasswordEmail(
+            final String email) {
+        final User user = getValidEmail(email);
+        final TenantUser tenantUser = getValidTenantUser(null, user);
+
+        notificationService.sendEmailOnAddTenant(
+                email,
+                tenantUser.getTenant().getId()
+        );
+    }
+
+    public void resetPassword(final ResetPasswordRequest resetPasswordRequest) {
+        final String refreshToken = resetPasswordRequest.refreshToken();
+        final String email = jwtService.getSubject(refreshToken);
+        final Long tenantId = jwtService.getTenantId(refreshToken);
+
+        final User user = getValidEmail(email);
+        final TenantUser tenantUser = getValidTenantUser(tenantId, user);
+
+        user.setPassword(encoder.encode(resetPasswordRequest.password()));
+        userRepository.save(user);
+    }
+
+    private static TenantUser getValidTenantUser(Long tenantId, User user) {
+        return getTenantUser(tenantId, user)
+                .orElseThrow(() -> new WebsiteException("Invalid Tenant"));
+    }
+
+    private User getValidEmail(String email) {
+        return getUser(email)
+                .orElseThrow(() -> new WebsiteException("Invalid Email"));
+    }
+
     private String getAccessToken(
             @NonNull final String email,
             @NonNull final Long tenantId
@@ -309,7 +342,7 @@ public class UserService {
         claims.put("userId", user.getId());
         claims.put("tenantId", tenant.getId());
         claims.put("tenantGuid", tenant.getGuid());
-        claims.put("tenant", tenant.getName());
+        claims.put("tenant", tenant.getDatabaseName());
         claims.put("permissions", permissions);
 
         return jwtService.generateJwtToken(email, claims);
@@ -373,6 +406,20 @@ public class UserService {
 
     private Optional<UserProfile> getUserProfile(UUID userId, Long tenantId) {
         return userProfileRepository.findByUserIdAndTenantId(userId, tenantId);
+    }
+
+    private static Optional<TenantUser> getTenantUser(
+            final Long tenantId,
+            final User user) {
+        return user.getTenantUserList().stream()
+                .filter(tenantUserToFilter -> {
+                    if (tenantId == null) {
+                        return tenantUserToFilter.isDefaultTenant();
+                    } else {
+                        return tenantUserToFilter.getTenant().getId().equals(tenantId);
+                    }
+                })
+                .findFirst();
     }
 
 }

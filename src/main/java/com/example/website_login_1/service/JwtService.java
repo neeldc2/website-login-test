@@ -33,11 +33,15 @@ public class JwtService {
 
     // 10 mins
     @Value("${website-login.access-token-expiration-in-millis:600000}")
-    private Integer accessTokenExpirationInMillis;
+    private Long accessTokenExpirationInMillis;
 
     // 2 Hours
     @Value("${website-login.refresh-token-expiration-in-millis:7200000}")
-    private Integer refreshTokenExpirationInMillis;
+    private Long refreshTokenExpirationInMillis;
+
+    // 3 days
+    @Value("${website-login.add-tenant-refresh-token-expiration-in-millis:259200000}")
+    private Long addTenantRefreshTokenExpirationInMillis;
 
     private final String secretKey;
 
@@ -58,7 +62,6 @@ public class JwtService {
                 .add(claims)
                 .subject(username)
                 .issuedAt(new Date(System.currentTimeMillis()))
-                // TODO: Make it config. Currently, it expires in 10 mins
                 .expiration(new Date(System.currentTimeMillis() + (accessTokenExpirationInMillis)))
                 .and()
                 .signWith(getKey())
@@ -74,11 +77,31 @@ public class JwtService {
                 .add(claims)
                 .subject(email)
                 .issuedAt(new Date(System.currentTimeMillis()))
-                // TODO: Make it config. Currently, it expires in 1 day
                 .expiration(new Date(System.currentTimeMillis() + (refreshTokenExpirationInMillis)))
                 .and()
                 .signWith(getKey())
                 .compact();
+    }
+
+    public String generateRefreshToken(final String email,
+                                       final Long tenantId,
+                                       final Long timeInMillis) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("tenantId", tenantId);
+        return Jwts.builder()
+                .claims()
+                .add(claims)
+                .subject(email)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + (timeInMillis)))
+                .and()
+                .signWith(getKey())
+                .compact();
+    }
+
+    public String generateRefreshTokenForNewTenant(final String email,
+                                                   final Long tenantId) {
+        return generateRefreshToken(email, tenantId, addTenantRefreshTokenExpirationInMillis);
     }
 
     private SecretKey getKey() {

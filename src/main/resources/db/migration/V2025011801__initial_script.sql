@@ -21,6 +21,7 @@ CREATE TABLE tenants (
     guid binary(16) default (uuid_to_bin(uuid())) NOT NULL UNIQUE,
     name VARCHAR(100) NOT NULL UNIQUE,
     database_name VARCHAR(100) NOT NULL UNIQUE,
+    is_testing_tenant BOOLEAN DEFAULT FALSE,
     enabled BOOLEAN DEFAULT TRUE
 );
 

@@ -37,6 +37,10 @@ public class Tenant {
     @Column(name = "name", nullable = false)
     private String name;
 
+    @Column(name = "is_testing_tenant", nullable = false)
+    @Builder.Default
+    private boolean isTestingTenant = false;
+
     @Column(name = "database_name", nullable = false)
     private String databaseName;
 
