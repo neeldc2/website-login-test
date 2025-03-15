@@ -1,14 +1,17 @@
 package com.example.website_login_1.service;
 
+import com.example.website_login_1.dto.ApproveUserRequest;
 import com.example.website_login_1.dto.CreateTenantRequest;
 import com.example.website_login_1.dto.CreateTenantResponse;
 import com.example.website_login_1.dto.CreateTenantUserRequest;
 import com.example.website_login_1.dto.CreateUserRequest;
 import com.example.website_login_1.dto.RefreshTokenRequest;
 import com.example.website_login_1.dto.RefreshTokenResponse;
+import com.example.website_login_1.dto.RejectUserRequest;
 import com.example.website_login_1.dto.ResetPasswordRequest;
 import com.example.website_login_1.dto.UpdateTenantRequest;
 import com.example.website_login_1.dto.UpsertUserProfileRequest;
+import com.example.website_login_1.dto.UserInfoResponse;
 import com.example.website_login_1.dto.UserLoginRequest;
 import com.example.website_login_1.dto.UserLoginResponse;
 import com.example.website_login_1.entity.LoginHistory;
@@ -20,15 +23,17 @@ import com.example.website_login_1.entity.TenantUser;
 import com.example.website_login_1.entity.User;
 import com.example.website_login_1.entity.UserProfile;
 import com.example.website_login_1.entity.UserTenantRole;
+import com.example.website_login_1.enums.AdminActionType;
+import com.example.website_login_1.enums.LoginType;
+import com.example.website_login_1.enums.UserStatus;
 import com.example.website_login_1.exception.WebsiteException;
-import com.example.website_login_1.repository.LoginHistoryRepository;
-import com.example.website_login_1.repository.RoleRepository;
 import com.example.website_login_1.repository.TenantRepository;
-import com.example.website_login_1.repository.TenantUserRepository;
 import com.example.website_login_1.repository.UserProfileRepository;
 import com.example.website_login_1.repository.UserRepository;
-import com.example.website_login_1.repository.UserTenantRoleRepository;
 import com.example.website_login_1.usercontext.UserContextHolder;
+import com.example.website_login_1.utils.ObjectMapperUtils;
+import com.example.website_login_1.utils.PasswordValidator;
+import com.google.common.collect.Sets;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,17 +48,20 @@ import org.springframework.util.CollectionUtils;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static com.example.website_login_1.constant.WebsiteLoginConstants.ADMIN_ROLE_NAME;
 import static com.example.website_login_1.constant.WebsiteLoginConstants.Permissions.MANAGE_USERS;
+import static com.example.website_login_1.constant.WebsiteLoginConstants.Roles.ADMIN;
+import static com.example.website_login_1.constant.WebsiteLoginConstants.Roles.ROLES_ALLOWED_FOR_USER_SIGNUP;
+import static com.example.website_login_1.constant.WebsiteLoginConstants.Roles.STUDENT;
 
 @Slf4j
 @Service
@@ -64,20 +72,46 @@ public class UserService {
     private final PasswordEncoder encoder;
     private final UserRepository userRepository;
     private final TenantRepository tenantRepository;
-    private final TenantUserRepository tenantUserRepository;
-    private final RoleRepository roleRepository;
-    private final UserTenantRoleRepository userTenantRoleRepository;
     private final UserProfileRepository userProfileRepository;
-    private final LoginHistoryRepository loginHistoryRepository;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final NotificationService notificationService;
+    private final RoleService roleService;
+    private final AdminActionService adminActionService;
+    private final LoginHistoryService loginHistoryService;
+    private final TenantUserService tenantUserService;
+    private final ObjectMapperUtils objectMapperUtils;
+
+    public void userSignUp(final CreateTenantUserRequest createTenantUserRequest) {
+        if (!createTenantUserRequest.createUserRequest().active()) {
+            throw new RuntimeException("User not active");
+        }
+        if (createTenantUserRequest.createUserRequest().approved()) {
+            throw new RuntimeException("User can only be approved by Admin");
+        }
+
+        Set<String> rolesInRequest = createTenantUserRequest.createUserRequest().roleNames();
+        if (CollectionUtils.isEmpty(rolesInRequest)) {
+            throw new RuntimeException("Roles empty");
+        }
+
+        if (!Sets.difference(rolesInRequest, ROLES_ALLOWED_FOR_USER_SIGNUP).isEmpty()) {
+            throw new RuntimeException("Roles invalid");
+        }
+
+        createTenantUser(createTenantUserRequest);
+    }
 
     public void createTenantUser(final CreateTenantUserRequest createTenantUserRequest) {
+        final String password = createTenantUserRequest.createUserRequest().password();
+        if (!PasswordValidator.isStrongPassword(password)) {
+            throw new WebsiteException("Not a strong password");
+        }
+
         Tenant tenant = getValidTenant(createTenantUserRequest.tenantGuid());
 
         CreateUserRequest createUserRequest = createTenantUserRequest.createUserRequest();
-        Set<Role> roles = getRoles(createUserRequest.roleNames());
+        Set<Role> roles = roleService.getRoles(createUserRequest.roleNames());
         final Optional<User> userOptional = getUser(createUserRequest.email());
         final User user = userOptional.orElseGet(() -> createTenantUser(createUserRequest));
 
@@ -86,6 +120,10 @@ public class UserService {
                 .user(user)
                 // default tenant if user is getting created for the first time
                 .defaultTenant(userOptional.isEmpty())
+                .active(createUserRequest.active())
+                .approved(createUserRequest.approved())
+                .rejected(false)
+                .rejectionCounter(0L)
                 .build();
         //tenantUserRepository.save(tenantUser);
         user.addTenantUsers(tenantUser);
@@ -129,6 +167,7 @@ public class UserService {
         return performUserLogin(
                 userLoginRequest.email(),
                 userLoginRequest.tenantId(),
+                LoginType.USERNAME_PASSWORD,
                 userAgent,
                 ipAddress);
     }
@@ -136,12 +175,20 @@ public class UserService {
     public UserLoginResponse performUserLogin(
             @NonNull final String email,
             final Long tenantId,
+            final LoginType loginType,
             @NonNull final String userAgent,
-            @NonNull final String ipAddress) {
+            @NonNull final String ipAddress
+    ) {
         final User user = getValidUser(email);
-        final TenantUser tenantUser = getValidTenantUser(tenantId, user);
+        final TenantUser tenantUser = TenantUserService.getValidTenantUser(tenantId, user);
         final String accessToken = getAccessToken(email, tenantUser.getTenant().getId());
         final String refreshToken = jwtService.generateRefreshToken(email, tenantUser.getTenant().getId());
+
+        // if user was imported by admin, then the status would be inactive.
+        // when the user logs in for the first time, change the status to active
+        if (!tenantUser.isActive()) {
+            tenantUserService.activateTenantUser(List.of(tenantUser));
+        }
 
         LoginHistory loginHistory = LoginHistory.builder()
                 .userId(user.getId())
@@ -150,9 +197,10 @@ public class UserService {
                 .ipAddress(ipAddress)
                 .userAgent(userAgent)
                 .success(true)
+                .loginType(loginType)
                 .loginTimestamp(Instant.now())
                 .build();
-        loginHistoryRepository.save(loginHistory);
+        loginHistoryService.saveLoginHistory(loginHistory);
 
         return UserLoginResponse.builder()
                 .accessToken(accessToken)
@@ -161,6 +209,7 @@ public class UserService {
     }
 
     public void captureFailedUserLoginHistory(final UserLoginRequest userLoginRequest,
+                                              final LoginType loginType,
                                               final String userAgent,
                                               final String ipAddress,
                                               final Exception exception) {
@@ -169,10 +218,11 @@ public class UserService {
                 .ipAddress(ipAddress)
                 .userAgent(userAgent)
                 .success(false)
+                .loginType(loginType)
                 .failureReason(exception.getMessage())
                 .loginTimestamp(Instant.now())
                 .build();
-        loginHistoryRepository.save(loginHistory);
+        loginHistoryService.saveLoginHistory(loginHistory);
     }
 
     public RefreshTokenResponse refreshToken(
@@ -271,8 +321,159 @@ public class UserService {
         userProfileRepository.save(userProfile);
     }
 
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    public List<UserInfoResponse> getAllUsersResponseInTenant(
+            final UserStatus userStatus
+    ) {
+        Long tenantId = UserContextHolder.getUserContext().tenantId();
+
+        // There cannot be a scenario where both are true.
+        boolean rejected;
+        boolean approved;
+
+        switch (userStatus) {
+            case APPROVED:
+                approved = true;
+                rejected = false;
+                break;
+
+            case REJECTED:
+                approved = false;
+                rejected = true;
+                break;
+
+            case APPROVAL_PENDING:
+                approved = false;
+                rejected = false;
+                break;
+
+            default:
+                throw new WebsiteException("Unsupported Type");
+        }
+
+        List<User> users = getAllUsers(approved, rejected);
+
+        // TODO: Get User Profile from Another microservice
+        return users.stream()
+                .map(user ->
+                        TenantUserService
+                                .getTenantUser(tenantId, user)
+                                .map(tenantUser -> UserInfoResponse.getUserInfoResponse(user, tenantUser))
+                                .orElse(null)
+                )
+                .filter(Predicate.not(Objects::isNull))
+                .toList();
+    }
+
+    public void approveUsers(final List<ApproveUserRequest> approveUserRequestList,
+                             final String ipAddress,
+                             final String userAgent) {
+        Long tenantId = UserContextHolder.getUserContext().tenantId();
+
+        final Set<UUID> userIds = approveUserRequestList.stream()
+                .map(ApproveUserRequest::userId)
+                .collect(Collectors.toSet());
+
+        final List<User> users = userRepository.findByIdInLeftJoinFetchTenantAndUserTenantRoles(userIds);
+        final List<TenantUser> tenantUserList = users.stream()
+                .map(user -> TenantUserService.getTenantUser(tenantId, user).get())
+                .toList();
+        tenantUserService.approveTenantUsers(tenantUserList);
+
+        // Upgrade these users role from USERS to STUDENT
+        users.forEach(user -> roleService.updateUserRole(user, STUDENT));
+
+        adminActionService.addAdminAction(
+                AdminActionType.APPROVE_USERS,
+                objectMapperUtils.getObjectAsString(userIds),
+                ipAddress,
+                userAgent
+        );
+    }
+
+    public void rejectUsers(final List<RejectUserRequest> rejectUserRequestList,
+                            final String ipAddress,
+                            final String userAgent
+    ) {
+        Long tenantId = UserContextHolder.getUserContext().tenantId();
+
+        final Set<UUID> userIds = rejectUserRequestList.stream()
+                .map(RejectUserRequest::userId)
+                .collect(Collectors.toSet());
+
+        final List<User> users = userRepository.findByIdInLeftJoinFetchTenantAndUserTenantRoles(userIds);
+        final List<TenantUser> tenantUserList = users.stream()
+                .map(user -> TenantUserService.getTenantUser(tenantId, user).get())
+                .toList();
+        tenantUserService.rejectTenantUsers(tenantUserList);
+
+        adminActionService.addAdminAction(
+                AdminActionType.REJECT_USERS,
+                objectMapperUtils.getObjectAsString(userIds),
+                ipAddress,
+                userAgent
+        );
+    }
+
+    public void addAdmin(final UUID newAdminUserId,
+                         final String ipAddress,
+                         final String userAgent) {
+        if (!doesUserExistsWithSameTenant(newAdminUserId)) {
+            throw new RuntimeException("user does not exists");
+        }
+
+        Long tenantId = UserContextHolder.getUserContext().tenantId();
+
+        final User user = userRepository.findByIdInLeftJoinFetchTenantAndUserTenantRoles(Set.of(newAdminUserId)).get(0);
+        final TenantUser tenantUser = TenantUserService.getValidTenantUser(tenantId, user);
+        if (!user.isEnabled()) {
+            throw new WebsiteException("User should be enabled");
+        }
+        if (!tenantUser.isActive()) {
+            throw new WebsiteException("User has to login at-least once");
+        }
+        if (!tenantUser.isApproved()) {
+            throw new WebsiteException("User is not approved");
+        }
+
+        roleService.updateUserRole(user, ADMIN);
+
+        adminActionService.addAdminAction(
+                AdminActionType.ADD_ADMIN,
+                objectMapperUtils.getObjectAsString(newAdminUserId),
+                ipAddress,
+                userAgent
+        );
+    }
+
+    public void requestApproval() {
+        Long tenantId = UserContextHolder.getUserContext().tenantId();
+        UUID userId = UserContextHolder.getUserContext().userId();
+
+        User user = userRepository.findByTenantIdLeftJoinFetchTenantUser(userId, tenantId);
+        final TenantUser tenantUser = TenantUserService.getValidTenantUser(tenantId, user);
+
+        if (tenantUser.isApproved()) {
+            throw new WebsiteException("User already approved");
+        }
+
+        if (tenantUser.getRejectionCounter() == 2) {
+            throw new WebsiteException("Max limit reached");
+        }
+
+        tenantUserService.requestAdminApproval(tenantUser);
+    }
+
+    private List<User> getAllUsers(
+            final boolean approved,
+            final boolean rejected
+    ) {
+        Long currentUserTenantId = UserContextHolder.getUserContext().tenantId();
+        return userRepository.findByTenantIdAndApprovedAndRejected(currentUserTenantId, approved, rejected);
+    }
+
+    private List<User> getAllUsers() {
+        Long currentUserTenantId = UserContextHolder.getUserContext().tenantId();
+        return userRepository.findByTenantIdLeftJoinFetchTenantUser(currentUserTenantId);
     }
 
     public void deleteUsers() {
@@ -288,7 +489,7 @@ public class UserService {
     public void sendResetPasswordEmail(
             final String email) {
         final User user = getValidUser(email);
-        final TenantUser tenantUser = getValidTenantUser(null, user);
+        final TenantUser tenantUser = TenantUserService.getValidTenantUser(null, user);
 
         notificationService.sendEmailOnAddTenant(
                 email,
@@ -302,7 +503,7 @@ public class UserService {
         final Long tenantId = jwtService.getTenantId(refreshToken);
 
         final User user = getValidUser(email);
-        final TenantUser tenantUser = getValidTenantUser(tenantId, user);
+        final TenantUser tenantUser = TenantUserService.getValidTenantUser(tenantId, user);
 
         user.setPassword(encoder.encode(resetPasswordRequest.password()));
         userRepository.save(user);
@@ -312,20 +513,26 @@ public class UserService {
             final String email
     ) {
         Optional<User> userOptional = getUser(email);
+        return doesUserExistsWithSameTenant(userOptional);
+    }
+
+    public boolean doesUserExistsWithSameTenant(
+            final UUID userId
+    ) {
+        Optional<User> userOptional = getUser(userId);
+        return doesUserExistsWithSameTenant(userOptional);
+    }
+
+    private static boolean doesUserExistsWithSameTenant(final Optional<User> userOptional) {
         if (userOptional.isEmpty()) {
             return false;
         }
 
         Long tenantId = UserContextHolder.getUserContext().tenantId();
-        if (getTenantUser(tenantId, userOptional.get()).isEmpty()) {
+        if (TenantUserService.getTenantUser(tenantId, userOptional.get()).isEmpty()) {
             return false;
         }
         return true;
-    }
-
-    private static TenantUser getValidTenantUser(Long tenantId, User user) {
-        return getTenantUser(tenantId, user)
-                .orElseThrow(() -> new WebsiteException("Invalid Tenant"));
     }
 
     private User getValidUser(String email) {
@@ -391,16 +598,6 @@ public class UserService {
         return tenant;
     }
 
-    private Set<Role> getRoles(final Set<String> roleNames) {
-        Set<Role> roles = roleRepository.findByNameIn(roleNames);
-
-        if (CollectionUtils.isEmpty(roles) || roles.size() != roleNames.size()) {
-            throw new WebsiteException("Invalid Roles");
-        }
-
-        return Collections.unmodifiableSet(roles);
-    }
-
     private void validateTenantRequest(final CreateTenantRequest createTenantRequest) {
         final Tenant tenant = tenantRepository.findByName(createTenantRequest.tenantName());
 
@@ -409,32 +606,29 @@ public class UserService {
         }
 
         CreateUserRequest createUserRequest = createTenantRequest.createUserRequest();
+        if (!createUserRequest.active()) {
+            throw new RuntimeException("Tenant Admin should be enabled");
+        }
+        if (!createUserRequest.approved()) {
+            throw new RuntimeException("Tenant Admin should be approved");
+        }
 
-        if (!createUserRequest.roleNames().contains(ADMIN_ROLE_NAME)) {
-            throw new WebsiteException("Tenant User is not admin");
+        Set<String> roleNamesInRequest = createUserRequest.roleNames();
+        if (!Set.of(ADMIN).equals(roleNamesInRequest)) {
+            throw new RuntimeException("Tenant User is not admin");
         }
     }
 
-    private Optional<User> getUser(String email) {
+    private Optional<User> getUser(final String email) {
         return userRepository.findByEmail(email);
+    }
+
+    private Optional<User> getUser(final UUID userId) {
+        return userRepository.findById(userId);
     }
 
     private Optional<UserProfile> getUserProfile(UUID userId, Long tenantId) {
         return userProfileRepository.findByUserIdAndTenantId(userId, tenantId);
-    }
-
-    private static Optional<TenantUser> getTenantUser(
-            final Long tenantId,
-            final User user) {
-        return user.getTenantUserList().stream()
-                .filter(tenantUserToFilter -> {
-                    if (tenantId == null) {
-                        return tenantUserToFilter.isDefaultTenant();
-                    } else {
-                        return tenantUserToFilter.getTenant().getId().equals(tenantId);
-                    }
-                })
-                .findFirst();
     }
 
 }

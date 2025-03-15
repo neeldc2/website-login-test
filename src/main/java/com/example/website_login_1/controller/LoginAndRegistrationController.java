@@ -21,6 +21,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Set;
 
+import static com.example.website_login_1.enums.LoginType.USERNAME_PASSWORD;
+
 @RestController
 @Slf4j
 @RequiredArgsConstructor
@@ -31,7 +33,7 @@ public class LoginAndRegistrationController {
 
     @PostMapping("/user")
     public void createTenantUser(@RequestBody CreateTenantUserRequest createTenantUserRequest) {
-        userService.createTenantUser(createTenantUserRequest);
+        userService.userSignUp(createTenantUserRequest);
     }
 
     @PostMapping("/login")
@@ -41,7 +43,7 @@ public class LoginAndRegistrationController {
         try {
             return userService.userLoginViaUsernamePassword(userLoginRequest, userAgent, ipAddress);
         } catch (Exception exception) {
-            userService.captureFailedUserLoginHistory(userLoginRequest, userAgent, ipAddress, exception);
+            userService.captureFailedUserLoginHistory(userLoginRequest, USERNAME_PASSWORD, userAgent, ipAddress, exception);
             throw exception;
         }
     }
@@ -56,6 +58,11 @@ public class LoginAndRegistrationController {
         return tenantService.getRegisteredTenants();
     }
 
+    /**
+     * Audit wont be needed if Email service captures all the emails sent
+     *
+     * @param email
+     */
     @PostMapping("/reset-password-email")
     public void sendResetPasswordEmail(
             @RequestParam String email
@@ -63,6 +70,11 @@ public class LoginAndRegistrationController {
         userService.sendResetPasswordEmail(email);
     }
 
+    /**
+     * Audit wont be needed if Email service captures all the emails sent
+     *
+     * @param resetPasswordRequest
+     */
     @PutMapping("/reset-password")
     public void resetPassword(
             @RequestBody ResetPasswordRequest resetPasswordRequest

@@ -1,6 +1,6 @@
 package com.example.website_login_1.entity;
 
-import com.example.website_login_1.enums.LoginType;
+import com.example.website_login_1.enums.AdminActionType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -8,15 +8,17 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
 
-import java.time.Instant;
+import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @AllArgsConstructor
@@ -25,12 +27,13 @@ import java.util.UUID;
 @Setter
 @Builder
 @Entity
-@Table(name = "login_history")
-public class LoginHistory {
+@Table(name = "admin_actions")
+public class AdminAction implements Serializable {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "id")
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(name = "user_id")
     private UUID userId;
@@ -38,18 +41,12 @@ public class LoginHistory {
     @Column(name = "tenant_id")
     private Long tenantId;
 
-    @Column(name = "email")
-    private String email;
-
-    @Column(name = "success")
-    private boolean success;
-
     @Enumerated(EnumType.STRING)
-    @Column(name = "login_type", nullable = false)
-    private LoginType loginType;
+    @Column(name = "action", nullable = false)
+    private AdminActionType action;
 
-    @Column(name = "failure_reason", columnDefinition = "TEXT")
-    private String failureReason;
+    @Column(name = "action_values", nullable = false, columnDefinition = "TEXT")
+    private String actionValues;
 
     @Column(name = "ip_address")
     private String ipAddress;
@@ -57,10 +54,21 @@ public class LoginHistory {
     @Column(name = "user_agent")
     private String userAgent;
 
-    @Column(name = "login_timestamp")
-    private Instant loginTimestamp;
-
     @Column(name = "created_at", updatable = false)
-    @CreationTimestamp
-    private Instant createdAt;
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+
 }

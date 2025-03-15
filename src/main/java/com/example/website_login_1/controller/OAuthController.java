@@ -4,6 +4,7 @@ import com.example.website_login_1.dto.CreateTenantUserRequest;
 import com.example.website_login_1.dto.CreateUserRequest;
 import com.example.website_login_1.dto.OAuthLoginAuthCode;
 import com.example.website_login_1.dto.UserLoginResponse;
+import com.example.website_login_1.enums.LoginType;
 import com.example.website_login_1.exception.WebsiteException;
 import com.example.website_login_1.service.UserService;
 import com.example.website_login_1.utils.PasswordGenerator;
@@ -28,7 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.example.website_login_1.constant.WebsiteLoginConstants.Roles.STUDENT;
+import static com.example.website_login_1.constant.WebsiteLoginConstants.Roles.USER;
 
 @RestController
 @Slf4j
@@ -74,7 +75,9 @@ public class OAuthController {
             CreateUserRequest createUserRequest = CreateUserRequest.builder()
                     .email(email)
                     .username(email)
-                    .roleNames(Set.of(STUDENT))
+                    .roleNames(Set.of(USER))
+                    .active(true)
+                    .approved(false)
                     .password(PasswordGenerator.generateSecurePassword(10))
                     .build();
             CreateTenantUserRequest createTenantUserRequest = CreateTenantUserRequest.builder()
@@ -84,7 +87,7 @@ public class OAuthController {
             userService.createTenantUser(createTenantUserRequest);
         }
 
-        return userService.performUserLogin(email, tenantId, userAgent, ipAddress);
+        return userService.performUserLogin(email, tenantId, LoginType.GOOGLE_SSO, userAgent, ipAddress);
     }
 
     private String getIdTokenFromGoogle(

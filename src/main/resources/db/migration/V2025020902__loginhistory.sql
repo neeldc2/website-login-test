@@ -4,6 +4,7 @@ CREATE TABLE login_history (
     email VARCHAR(100) NOT NULL,
     tenant_id BIGINT,
     success BOOLEAN,
+    login_type VARCHAR(50) NOT NULL,
     failure_reason TEXT,
     ip_address VARCHAR(45) NOT NULL,
     user_agent VARCHAR(255) NOT NULL,

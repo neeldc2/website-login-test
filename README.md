@@ -30,6 +30,3 @@ This project will Act as a microservice that
 * Has API that sends email to recover password by resetting it. Has refresh token that expires in 3 days.
 * has Invite User API
 
-TODO:
-
-* Add roles and permissions API

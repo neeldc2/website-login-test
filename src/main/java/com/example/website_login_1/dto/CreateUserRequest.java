@@ -10,6 +10,8 @@ public record CreateUserRequest(
         @NonNull String username,
         @NonNull String email,
         @NonNull String password,
+        boolean active,
+        boolean approved,
         @NonNull Set<String> roleNames
 ) {
 }

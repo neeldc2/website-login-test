@@ -3,7 +3,8 @@ CREATE TABLE users (
     username VARCHAR(50) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
     password VARCHAR(100) NOT NULL,
-    enabled BOOLEAN DEFAULT TRUE
+    enabled BOOLEAN DEFAULT TRUE,
+    INDEX users_email (email)
 );
 
 CREATE TABLE roles (
@@ -28,6 +29,7 @@ CREATE TABLE tenants (
 CREATE TABLE user_tenant_roles (
     id binary(16) PRIMARY KEY,
     user_id binary(16) NOT NULL,
+    -- this is intentionally GUID instead of Id. I wanted foreign key with non id field to know how to handle in JPA
     tenant_id binary(16) NOT NULL,
     role_id binary(16) NOT NULL,
     UNIQUE KEY (user_id, role_id, tenant_id),
@@ -50,6 +52,10 @@ CREATE TABLE tenant_users (
     tenant_id BIGINT NOT NULL,
     user_id binary(16) NOT NULL,
     default_tenant BOOLEAN DEFAULT FALSE,
+    active BOOLEAN DEFAULT FALSE,
+    approved BOOLEAN DEFAULT FALSE,
+    rejected BOOLEAN DEFAULT FALSE,
+    rejection_counter BIGINT,
     UNIQUE KEY (tenant_id, user_id),
     -- this key ensures that only one tenant is default for a user
     UNIQUE KEY (user_id, default_tenant),

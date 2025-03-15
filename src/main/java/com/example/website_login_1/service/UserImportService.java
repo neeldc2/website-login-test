@@ -1,9 +1,9 @@
-package com.example.website_login_1.excel;
+package com.example.website_login_1.service;
 
 import com.example.website_login_1.dto.CreateTenantUserRequest;
 import com.example.website_login_1.dto.CreateUserRequest;
 import com.example.website_login_1.dto.UpsertUserProfileRequest;
-import com.example.website_login_1.service.UserService;
+import com.example.website_login_1.dto.UserProfileExcelDto;
 import com.example.website_login_1.usercontext.UserContextHolder;
 import com.example.website_login_1.utils.PasswordGenerator;
 import lombok.RequiredArgsConstructor;
@@ -32,13 +32,16 @@ public class UserImportService {
     }
 
     @Async("threadPoolTaskExecutor")
-    public void importUser(UserProfileExcelDto userProfileExcelDto) {
+    public void importUser(final UserProfileExcelDto userProfileExcelDto
+    ) {
         UUID tenantGuid = UserContextHolder.getUserContext().tenantGuid();
 
         CreateUserRequest createUserRequest = CreateUserRequest.builder()
                 .email(userProfileExcelDto.email())
                 .username(userProfileExcelDto.firstName())
                 .password(PasswordGenerator.generateSecurePassword(10))
+                .active(false)
+                .approved(true)
                 .roleNames(Set.of(STUDENT))
                 .build();
 
@@ -72,7 +75,4 @@ public class UserImportService {
         return CompletableFuture.completedFuture("Completed");
     }
 
-    public Integer getUserCount() {
-        return userService.getAllUsers().size();
-    }
 }

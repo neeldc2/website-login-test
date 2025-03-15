@@ -39,8 +39,28 @@ public class TenantUser {
     @JoinColumn(name="user_id", nullable=false)
     private User user;
 
+    @Column(name = "active", nullable = false)
+    private boolean active;
+
+    @Column(name = "approved", nullable = false)
+    private boolean approved;
+
+    @Column(name = "rejected", nullable = false)
+    private boolean rejected;
+
+    @Column(name = "rejection_counter", nullable = false)
+    private Long rejectionCounter;
+
     @Column(name = "default_tenant", nullable = false)
     @Builder.Default
     private boolean defaultTenant = false;
+
+    public void resetRejectionCounter() {
+        this.rejectionCounter = 0L;
+    }
+
+    public void increaseRejectionCounter() {
+        this.rejectionCounter = this.rejectionCounter + 1;
+    }
 
 }
