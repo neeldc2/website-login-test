@@ -4,8 +4,11 @@ import com.example.website_login_1.entity.TenantUser;
 import com.example.website_login_1.entity.User;
 import lombok.Builder;
 
+import java.util.UUID;
+
 @Builder
 public record UserInfoResponse(
+        UUID userId,
         String email,
         String firstName,
         String middleName,
@@ -19,6 +22,7 @@ public record UserInfoResponse(
             final TenantUser tenantUser
     ) {
         return UserInfoResponse.builder()
+                .userId(user.getId())
                 .email(user.getEmail())
                 .active(tenantUser.isActive())
                 .approved(tenantUser.isApproved())
