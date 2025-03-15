@@ -138,7 +138,7 @@ public class UserService {
             final Long tenantId,
             @NonNull final String userAgent,
             @NonNull final String ipAddress) {
-        final User user = getValidEmail(email);
+        final User user = getValidUser(email);
         final TenantUser tenantUser = getValidTenantUser(tenantId, user);
         final String accessToken = getAccessToken(email, tenantUser.getTenant().getId());
         final String refreshToken = jwtService.generateRefreshToken(email, tenantUser.getTenant().getId());
@@ -287,7 +287,7 @@ public class UserService {
 
     public void sendResetPasswordEmail(
             final String email) {
-        final User user = getValidEmail(email);
+        final User user = getValidUser(email);
         final TenantUser tenantUser = getValidTenantUser(null, user);
 
         notificationService.sendEmailOnAddTenant(
@@ -301,11 +301,26 @@ public class UserService {
         final String email = jwtService.getSubject(refreshToken);
         final Long tenantId = jwtService.getTenantId(refreshToken);
 
-        final User user = getValidEmail(email);
+        final User user = getValidUser(email);
         final TenantUser tenantUser = getValidTenantUser(tenantId, user);
 
         user.setPassword(encoder.encode(resetPasswordRequest.password()));
         userRepository.save(user);
+    }
+
+    public boolean doesUserExistsWithSameTenant(
+            final String email
+    ) {
+        Optional<User> userOptional = getUser(email);
+        if (userOptional.isEmpty()) {
+            return false;
+        }
+
+        Long tenantId = UserContextHolder.getUserContext().tenantId();
+        if (getTenantUser(tenantId, userOptional.get()).isEmpty()) {
+            return false;
+        }
+        return true;
     }
 
     private static TenantUser getValidTenantUser(Long tenantId, User user) {
@@ -313,7 +328,7 @@ public class UserService {
                 .orElseThrow(() -> new WebsiteException("Invalid Tenant"));
     }
 
-    private User getValidEmail(String email) {
+    private User getValidUser(String email) {
         return getUser(email)
                 .orElseThrow(() -> new WebsiteException("Invalid Email"));
     }

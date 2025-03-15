@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import static com.example.website_login_1.constant.WebsiteLoginConstants.ActiveMqConstants.ADD_TENANT_EMAIL_QUEUE;
+import static com.example.website_login_1.constant.WebsiteLoginConstants.ActiveMqConstants.EMAIL_QUEUE;
 import static com.example.website_login_1.constant.WebsiteLoginConstants.KafkaConstants.NOTIFICATION_EMAIL_TOPIC;
 
 @RequiredArgsConstructor
@@ -29,7 +29,7 @@ public class MessagingController {
 
     @PostMapping("/activemq/send")
     public String sendActiveMqMessage(@RequestParam String message) {
-        activeMqProducer.sendMessage(ADD_TENANT_EMAIL_QUEUE, message);
+        activeMqProducer.sendMessage(EMAIL_QUEUE, message);
         return "Message sent to ActiveMq queue: " + NOTIFICATION_EMAIL_TOPIC;
     }
 }

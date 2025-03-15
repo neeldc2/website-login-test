@@ -25,6 +25,10 @@ This project will Act as a microservice that
 * Users can update only their own profile. Only admins can update other user profiles.
 * Use Kafka to send messages to other microservices.
 * Use ActiveMq to send messages to other microservices.
+* Has Get Tenant List API which is needed during sign-up to select tenant
+* Has Reset Password API
+* Has API that sends email to recover password by resetting it. Has refresh token that expires in 3 days.
+* has Invite User API
 
 TODO:
 

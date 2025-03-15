@@ -5,6 +5,8 @@ import com.example.website_login_1.dto.CreateTenantRequest;
 import com.example.website_login_1.dto.CreateTenantResponse;
 import com.example.website_login_1.dto.UpdateTenantRequest;
 import com.example.website_login_1.dto.UpsertUserProfileRequest;
+import com.example.website_login_1.exception.WebsiteException;
+import com.example.website_login_1.service.NotificationService;
 import com.example.website_login_1.service.UserService;
 import com.example.website_login_1.usercontext.UserContextHolder;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -22,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthenticatedController {
 
     private final UserService userService;
+    private final NotificationService notificationService;
 
     // This is also for basic auth
     // This is to test APIs using JWT
@@ -60,6 +64,16 @@ public class AuthenticatedController {
     @DeleteMapping("/users")
     public void deleteAllUsers() {
         userService.deleteUsers();
+    }
+
+    @PostMapping("/invite")
+    public void inviteUser(
+            @RequestParam String email
+    ) {
+        if (userService.doesUserExistsWithSameTenant(email)) {
+            throw new WebsiteException("User Already exists within same tenant");
+        }
+        notificationService.inviteNewUserToTenant(email);
     }
 
 }

@@ -1,6 +1,7 @@
 package com.example.website_login_1.service;
 
 import com.example.website_login_1.dto.messaging.AddTenantEmailPayload;
+import com.example.website_login_1.dto.messaging.EmailType;
 import com.example.website_login_1.messaging.ActiveMqProducer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -8,7 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Set;
 
-import static com.example.website_login_1.constant.WebsiteLoginConstants.ActiveMqConstants.ADD_TENANT_EMAIL_QUEUE;
+import static com.example.website_login_1.constant.WebsiteLoginConstants.ActiveMqConstants.EMAIL_QUEUE;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +31,14 @@ public class NotificationService {
                 .toEmailIds(Set.of(tenantAdminEmail))
                 .ccEmailIds(Set.of())
                 .bccEmailIds(Set.of())
+                .emailType(EmailType.ADD_TENANT)
                 .build();
-        activeMqProducer.sendMessage(ADD_TENANT_EMAIL_QUEUE, addTenantEmailPayload);
+        activeMqProducer.sendMessage(EMAIL_QUEUE, addTenantEmailPayload);
+    }
+
+    public void inviteNewUserToTenant(
+            final String email
+    ) {
+        System.out.println("Send invite email to user");
     }
 }
