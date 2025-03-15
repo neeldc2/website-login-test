@@ -62,13 +62,13 @@ public class AuthenticatedController {
      * @return
      */
     //@ValidatePermission({"MANAGE_TENANT"})
-    @PostMapping("/tenant")
+    @PostMapping("/tenants")
     public CreateTenantResponse registerTenant(@RequestBody CreateTenantRequest createTenantRequest) {
         return userService.registerTenant(createTenantRequest);
     }
 
     @ValidatePermission({MANAGE_TENANT})
-    @PutMapping("/tenant")
+    @PutMapping("/tenants")
     public void updateTenant(@RequestBody UpdateTenantRequest updateTenantRequest) {
         userService.updateTenant(updateTenantRequest);
     }
@@ -79,6 +79,7 @@ public class AuthenticatedController {
         userService.upsertUserProfile(upsertUserProfileRequest);
     }
 
+    // TODO: order by name. Add pagination
     @ValidatePermission({MANAGE_USERS})
     @GetMapping("/users")
     public List<UserInfoResponse> getAllUsersInTenant(
@@ -116,8 +117,7 @@ public class AuthenticatedController {
 
     @ValidatePermission({EDIT_PROFILE})
     @PostMapping("/users/request-approval")
-    public void requestApproval(@RequestParam UUID newAdminUserId
-    ) {
+    public void requestApproval() {
         userService.requestApproval();
     }
 

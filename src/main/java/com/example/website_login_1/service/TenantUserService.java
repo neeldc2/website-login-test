@@ -42,7 +42,6 @@ public class TenantUserService {
     ) {
         tenantUser.setApproved(false);
         tenantUser.setRejected(false);
-        tenantUser.increaseRejectionCounter();
         tenantUserRepository.save(tenantUser);
     }
 

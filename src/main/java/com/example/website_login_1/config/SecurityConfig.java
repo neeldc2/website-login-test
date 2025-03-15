@@ -51,9 +51,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(OPTIONS).permitAll()
                         .requestMatchers(HttpMethod.GET, "/tenants").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/register", "/user", "/login", "/refresh").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/tenants", "/user", "/login", "/refresh").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/google/callback", "/reset-password-email").permitAll()
-                        .requestMatchers(HttpMethod.PUT, "/tenant", "/reset-password").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/tenants", "/reset-password").permitAll()
                         .requestMatchers(HttpMethod.POST, "/messaging/**").permitAll()
                         //.requestMatchers("/register", "/login", "/tenant").permitAll()
                         //.requestMatchers(HttpMethod.POST, "/register").permitAll()

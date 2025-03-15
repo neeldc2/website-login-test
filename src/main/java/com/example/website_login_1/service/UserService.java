@@ -290,7 +290,7 @@ public class UserService {
 
         // Users can update only their own profile
         // Only admins can update other user profiles
-        if (!userId.equals(userIdFromContext) ||
+        if (!userId.equals(userIdFromContext) &&
                 !userPermissions.contains(MANAGE_USERS)) {
             throw new WebsiteException("User does not have permission to update profile");
         }
@@ -456,7 +456,7 @@ public class UserService {
             throw new WebsiteException("User already approved");
         }
 
-        if (tenantUser.getRejectionCounter() == 2) {
+        if (tenantUser.getRejectionCounter() >= 2) {
             throw new WebsiteException("Max limit reached");
         }
 
@@ -504,6 +504,11 @@ public class UserService {
 
         final User user = getValidUser(email);
         final TenantUser tenantUser = TenantUserService.getValidTenantUser(tenantId, user);
+
+        String password = resetPasswordRequest.password();
+        if (!PasswordValidator.isStrongPassword(password)) {
+            throw new WebsiteException("Not a strong password");
+        }
 
         user.setPassword(encoder.encode(resetPasswordRequest.password()));
         userRepository.save(user);

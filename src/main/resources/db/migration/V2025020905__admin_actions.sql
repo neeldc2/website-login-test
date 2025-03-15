@@ -7,7 +7,7 @@ CREATE TABLE admin_actions (
     ip_address VARCHAR(45) NOT NULL,
     user_agent VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX admin_actions_user_id (user_id),
     INDEX admin_actions_tenant_id (tenant_id)
 )
