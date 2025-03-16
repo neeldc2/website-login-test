@@ -17,7 +17,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -28,7 +27,7 @@ import java.util.UUID;
 @Builder
 @Entity
 @Table(name = "admin_actions")
-public class AdminAction implements Serializable {
+public class AdminAction {
 
     @Id
     @Column(name = "id")
