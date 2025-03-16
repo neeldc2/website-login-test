@@ -1,6 +1,7 @@
 package com.example.website_login_1.aspect;
 
 import com.example.website_login_1.annotation.ValidatePermission;
+import com.example.website_login_1.exception.WebsiteException;
 import com.example.website_login_1.usercontext.UserContext;
 import com.example.website_login_1.usercontext.UserContextHolder;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -9,9 +10,11 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 
 @Aspect
@@ -31,14 +34,30 @@ public class PermissionValidationAspect {
         // Retrieve required permissions from the annotation
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Method method = signature.getMethod();
-        ValidatePermission validatePermission = method.getAnnotation(ValidatePermission.class);
+        ValidatePermission methodPermission = method.getAnnotation(ValidatePermission.class);
+        List<String> methodLevelPermission = methodPermission != null ?
+                Arrays.stream(methodPermission.value()).toList() : List.of();
 
-        if (validatePermission != null && validatePermission.value() != null) {
-            boolean hasPermission = Arrays.stream(validatePermission.value())
+        // Get required permissions from the class-level annotation
+        Class<?> targetClass = method.getDeclaringClass();
+        ValidatePermission classPermission = targetClass.getAnnotation(ValidatePermission.class);
+        List<String> classLevelPermission = classPermission != null ?
+                Arrays.stream(classPermission.value()).toList() :
+                List.of();
+
+        if (!CollectionUtils.isEmpty(methodLevelPermission)) {
+            boolean hasPermission = methodLevelPermission.stream()
                     .allMatch(userPermissions::contains);
 
             if (!hasPermission) {
-                throw new SecurityException("Access Denied: Insufficient permissions");
+                throw new WebsiteException("Access Denied: Insufficient permissions");
+            }
+        } else if (!CollectionUtils.isEmpty(classLevelPermission)) {
+            boolean hasPermission = classLevelPermission.stream()
+                    .allMatch(userPermissions::contains);
+
+            if (!hasPermission) {
+                throw new WebsiteException("Access Denied: Insufficient permissions");
             }
         }
 
