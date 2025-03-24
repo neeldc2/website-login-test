@@ -50,6 +50,7 @@ public class SecurityConfig {
                 }))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(OPTIONS).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/cities/*").permitAll() // TODO: Remove later
                         .requestMatchers(HttpMethod.GET, "/tenants").permitAll()
                         .requestMatchers(HttpMethod.POST, "/tenants", "/user", "/login", "/refresh").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/google/callback", "/reset-password-email").permitAll()

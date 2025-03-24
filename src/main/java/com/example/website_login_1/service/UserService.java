@@ -81,6 +81,7 @@ public class UserService {
     private final LoginHistoryService loginHistoryService;
     private final TenantUserService tenantUserService;
     private final ObjectMapperUtils objectMapperUtils;
+    private final CityService cityService;
 
     public void userSignUp(final CreateTenantUserRequest createTenantUserRequest) {
         if (!createTenantUserRequest.createUserRequest().active()) {
@@ -263,6 +264,8 @@ public class UserService {
                 createTenantUserRequest.createUserRequest().email(),
                 tenant.getId()
         );
+
+        cityService.importCitiesFromCSV();
 
         return createTenantResponse;
     }
